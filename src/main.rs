@@ -2,6 +2,9 @@ use color_eyre::eyre::Result;
 
 use structopt::StructOpt;
 
+use digital_garden::write;
+
+
 /// A CLI for growing and maintaining a digital garden.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "garden")]
@@ -28,7 +31,7 @@ fn main() -> Result<()> {
     let opt = Opt::from_args();
     dbg!(&opt);
     match opt.cmd {
-        Command::Write { title: _ } => todo!(),
-    }
+        Command::Write { title } => write(title),
+    };
     todo!();
 }
