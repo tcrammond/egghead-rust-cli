@@ -17,6 +17,7 @@ path = "src/lib.rs"
 
 [dependencies]
 color-eyre = "0.6.0"
+directories = "4.0.1"
 structopt = "0.3.26"
 
 [dev-dependencies]
