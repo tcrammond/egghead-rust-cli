@@ -31,7 +31,7 @@ enum Command {
     ///
     /// Opens your editor, waits for you to write something, and saves it to your garden.
     Write {
-        
+
 
         /// Optionally set a title for what you'll writ about
         #[structopt(short, long)]
@@ -50,14 +50,12 @@ fn get_default_garden_dir () -> Result<PathBuf> {
 fn main() -> Result<()> {
     color_eyre::install()?;
     let opt = Opt::from_args();
-    dbg!(&opt);
     let garden_path = match opt.garden_path {
         Some(path) => Ok(path),
         None => get_default_garden_dir()
             .wrap_err("`garden_path` was not specified")
-    };
+    }?; // TODO: understand this
     match opt.cmd {
         Command::Write { title } => write(garden_path, title),
-    };
-    todo!();
+    }
 }
