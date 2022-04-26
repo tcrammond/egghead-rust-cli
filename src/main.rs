@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use directories::UserDirs;
 
-use color_eyre::eyre::{eyre, Result, WrapErr};
+use color_eyre::eyre::{eyre,  Result, WrapErr};
 
 use structopt::StructOpt;
 
