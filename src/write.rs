@@ -1,6 +1,7 @@
 use color_eyre::{eyre::WrapErr, Result};
 use edit::{edit_file, Builder};
-use std::io::{Read, Write};
+use std::fs;
+use std::io::{Read, Write, Seek, SeekFrom};
 use std::path::PathBuf;
 
 const TEMPLATE: &[u8; 2] = b"# ";
@@ -17,12 +18,77 @@ pub fn write(garden_path: PathBuf, title: Option<String>) -> Result<()> {
 
     // let the user write whatever they want in their favorite editor
     // before returning to the cli and finishing up
-    edit_file(filepath)?;
+    edit_file(&filepath)?;
 
     // Read the user's changes back from the file into a string
     let mut contents = String::new();
+    file.seek(SeekFrom::Start(0))?;
     file.read_to_string(&mut contents)?;
 
-    dbg!(contents);
-    todo!()
+    let document_title = title.or_else(
+        || {
+            contents
+                .lines()
+                .find(|line| line.starts_with("# "))
+                .map(
+                    |line| line.trim_start_matches("# ").to_string()
+                )
+        }
+    );
+
+    let filename = match document_title {
+        Some(raw_title) => confirm_filename(&raw_title),
+        None => ask_for_filename(),
+    }?;
+
+    let mut i: usize = 0;
+    loop {
+        let dest_filename = format!(
+            "{}{}",
+            filename,
+            if i == 0 { "".to_string() } else { i.to_string() }
+        );
+
+        let mut dest_path = garden_path.join(dest_filename);
+        dest_path.set_extension("md");
+
+        if dest_path.exists() {
+            i += 1;
+        } else {
+            fs::rename(&filepath, &dest_path);
+            break;
+        }
+    }
+    Ok(())
+}
+
+fn confirm_filename(raw_title: &str) -> Result<String> {
+    loop {
+        let result = rprompt::prompt_reply_stderr(&format!(
+            "\
+Current title: `{}`
+Is this OK? (Y/n): ",
+            raw_title,
+        ))
+        .wrap_err("Failed to get input for y/n question")?;
+
+        match result.as_str() {
+            "n" | "N" => break ask_for_filename(),
+            "y" | "Y" | "" => {
+                break Ok(slug::slugify(raw_title));
+            }
+            _ => {
+                // ask again because something went wrong
+            }
+        };
+    }
+}
+
+
+fn ask_for_filename() -> Result<String> {
+    rprompt::prompt_reply_stderr("\
+Enter a filename:
+> ")
+        .wrap_err("Failed to get filename")
+        .map(|filename| slug::slugify(filename))
 }
