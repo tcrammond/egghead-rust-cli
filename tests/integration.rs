@@ -21,10 +21,8 @@ fn test_write_help() -> Result<()> {
     Ok(())
 }
 
-// ignore for now as it's not implemented.
 #[test]
-/// execute the write command, saving a file out.
-fn test_write() {
+fn test_write_with_title_argument() {
     let fake_editor_script = std::env::current_dir()
         .expect("Expected to be in a dir")
         .join("tests")
@@ -49,4 +47,30 @@ fn test_write() {
     assert.success();
 
     temp_dir.child("test-title.md").assert(predicate::path::exists());
+}
+
+#[test]
+fn test_write_with_implicit_title() {
+    let fake_editor_script = std::env::current_dir()
+        .expect("Expected to be in a dir")
+        .join("tests")
+        .join("fake-editor.sh");
+
+    if !fake_editor_script.exists() {
+        panic!("Could ont find the fake editor script");
+    }
+
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    let mut cmd = Command::cargo_bin("garden").unwrap();
+
+    let assert = cmd
+        .env("EDITOR", fake_editor_script.as_os_str())
+        .env("GARDEN_PATH", temp_dir.path())
+        .arg("write")
+        .write_stdin("Y\n".as_bytes())
+        .assert();
+
+    assert.success();
+
+    temp_dir.child("testing.md").assert(predicate::path::exists());
 }
