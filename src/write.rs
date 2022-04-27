@@ -1,7 +1,7 @@
 use color_eyre::{eyre::WrapErr, owo_colors::OwoColorize, Result};
 use edit::{edit_file, Builder};
 use std::fs;
-use std::io::{Read, Write, Seek, SeekFrom};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
 
 const TEMPLATE: &[u8; 2] = b"# ";
@@ -25,16 +25,12 @@ pub fn write(garden_path: PathBuf, title: Option<String>) -> Result<()> {
     file.seek(SeekFrom::Start(0))?;
     file.read_to_string(&mut contents)?;
 
-    let document_title = title.or_else(
-        || {
-            contents
-                .lines()
-                .find(|line| line.starts_with("# "))
-                .map(
-                    |line| line.trim_start_matches("# ").to_string()
-                )
-        }
-    );
+    let document_title = title.or_else(|| {
+        contents
+            .lines()
+            .find(|line| line.starts_with("# "))
+            .map(|line| line.trim_start_matches("# ").to_string())
+    });
 
     let filename = match document_title {
         Some(raw_title) => confirm_filename(&raw_title),
@@ -46,7 +42,11 @@ pub fn write(garden_path: PathBuf, title: Option<String>) -> Result<()> {
         let dest_filename = format!(
             "{}{}",
             filename,
-            if i == 0 { "".to_string() } else { i.to_string() }
+            if i == 0 {
+                "".to_string()
+            } else {
+                i.to_string()
+            }
         );
 
         let mut dest_path = garden_path.join(dest_filename);
@@ -68,7 +68,7 @@ fn confirm_filename(raw_title: &str) -> Result<String> {
             "\
 {}{}
 Is this OK? (Y/n): ",
-"Current title: ".green().bold(),
+            "Current title: ".green().bold(),
             raw_title,
         ))
         .wrap_err("Failed to get input for y/n question")?;
@@ -85,12 +85,15 @@ Is this OK? (Y/n): ",
     }
 }
 
-
 fn ask_for_filename() -> Result<String> {
-    rprompt::prompt_reply_stderr(&format!("{}",
-    "\
+    rprompt::prompt_reply_stderr(&format!(
+        "{}",
+        "\
 Enter a filename:
-> ".blue().bold()))
-        .wrap_err("Failed to get filename")
-        .map(slug::slugify)
+> "
+        .blue()
+        .bold()
+    ))
+    .wrap_err("Failed to get filename")
+    .map(slug::slugify)
 }
